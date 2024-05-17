@@ -1,0 +1,19 @@
+[project]
+name = "torch_adapter"
+version = "0.1.0"
+description = "In progress"
+authors = [
+    {name = "LucaTamSapienza", email = "tutordimatematica.ing@gmail.com"},
+]
+dependencies = []
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true

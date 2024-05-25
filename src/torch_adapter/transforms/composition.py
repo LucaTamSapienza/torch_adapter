@@ -5,12 +5,13 @@ import openvino.runtime.opset14 as ops
 from openvino.runtime import Layout
 
 
-# TODO: __call__ method should not take shape as an argument
+
 def create_empty_model(shapes, dtype):
     """
     Create an empty input model that can take in different shapes and data types.
 
-    :param input_specs: List of tuples where each tuple contains (shape, datatype)
+    :param shapes: List of shapes
+    :param dtype: List of data types
     :return: OpenVINO model
     """
     # If shapes and datatypes have different lengths, fill datatypes with ov.Type.f32

@@ -58,9 +58,6 @@ class ConvertColor(Transform):
         ppp.input().preprocess().convert_color(self.color_format)
 
 
-
-
-
 # TODO: Implement ToTensor transformation
 class ToTensor(Transform):
     def __init__(self):

@@ -1,6 +1,7 @@
 import openvino as ov
 import openvino.runtime.opset14 as ops
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm, ColorFormat
+from openvino.runtime import Layout
 
 
 # Base class for all transformations
@@ -16,18 +17,18 @@ class Scale(Transform):
 
     def __call__(self, ppp):
         ppp.input().preprocess().scale(self.factor)
-        #ppp.input().preprocess().custom(lambda input: input * self.factor)
 
 
 # Resize transformation
 class Resize(Transform):
-    def __init__(self, height, width):
+    def __init__(self, height, width=None):
         self.height = height
-        self.width = width
+        # If width is not provided, set it to height
+        self.width = width if width is not None else height
 
     def __call__(self, ppp):
         ppp.input().preprocess().resize(ResizeAlgorithm.RESIZE_LINEAR, self.height, self.width)
-   
+
 # TODO: Implement CenterCrop transformation
 class CenterCrop(Transform):
     def __init__(self, height, width):
@@ -36,6 +37,7 @@ class CenterCrop(Transform):
 
     def __call__(self, ppp):
         pass
+
 
 # Normalize transformation
 class Normalize(Transform):

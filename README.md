@@ -18,12 +18,13 @@ pip install torch pytest numpy torchvision
 
 You may need to export your PYTHONPATH to point to the torch_adapter directory:
 
-> [!NOTE]
-> Please replace path_to_torch_adapter with the actual path to the torch_adapter directory on your system.
 
 ```
 export PYTHONPATH=$PYTHONPATH:path_to_torch_adapter
 ```
+
+> [!NOTE]
+> Please replace path_to_torch_adapter with the actual path to the torch_adapter directory on your system.
 
 Now you can check if everything works by running tests and so on.
 

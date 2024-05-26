@@ -1,4 +1,4 @@
-from src.torch_adapter import preprocess
+from src.torch_adapter.transforms import create_empty_model
 import openvino as ov
 import pytest
 
@@ -10,4 +10,4 @@ import pytest
 ])
 def test_create_empty_model(input_params):
     with pytest.raises(TypeError):
-        preprocess.create_empty_model(*input_params)
+        create_empty_model(*input_params)

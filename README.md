@@ -13,7 +13,7 @@ cd torch_adapter
 git checkout pre-release
 python3.9 -m venv venv
 source venv/bin/activate
-pip install torch pytest numpy torchvision
+pip install -r requirements.txt
 ```
 
 You may need to export your PYTHONPATH to point to the torch_adapter directory:

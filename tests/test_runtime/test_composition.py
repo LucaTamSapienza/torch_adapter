@@ -35,10 +35,12 @@ def test_Compose(shape, dtype):
     data = np.ones(shape, dtype=dtype)
 
     my_preprocess = Compose([
+        # Pad((1, 1), (1, 1), "constant", 0.0),
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
     torch_preprocess = transforms.Compose([
+        # transforms.Pad((1, 1)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
@@ -46,3 +48,48 @@ def test_Compose(shape, dtype):
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
     assert np.allclose(my_result, torch_result, rtol=1e-03)
+
+"""
+import urllib
+from PIL import Image
+
+@pytest.mark.parametrize("url, filename", [
+    ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg"),
+    # Add more tuples here for additional test cases
+])
+def test_Compose(url, filename):
+    # Download the image
+    try:
+        urllib.URLopener().retrieve(url, filename)
+    except:
+        urllib.request.urlretrieve(url, filename)
+
+    # Open the image with PIL
+    input_image = Image.open(filename)
+
+    # Define the preprocessing transformations
+    my_preprocess = Compose([
+        Resize(256),
+        CenterCrop(224),
+        ToTensor(),
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    torch_preprocess = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    # Preprocess the image
+    my_result = my_preprocess(input_image)
+    torch_result = torch_preprocess(input_image)
+
+    # Convert the results to numpy arrays
+    my_result = np.array(my_result)
+    torch_result = np.array(torch_result)
+
+    # Check if the results are close
+    assert np.allclose(my_result, torch_result, rtol=1e-03)
+"""

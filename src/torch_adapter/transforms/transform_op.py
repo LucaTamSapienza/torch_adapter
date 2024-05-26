@@ -1,5 +1,4 @@
-import openvino as ov
-import openvino.runtime.opset14 as ops
+import src.torch_adapter.transforms.util as f
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm, ColorFormat
 from openvino.runtime import Layout
 
@@ -64,3 +63,53 @@ class ToTensor(Transform):
         pass
     def __call__(self, ppp):
         pass
+
+
+# TODO: Implement ToTensor transformation
+class ConvertImageDtype(Transform):
+    def __init__(self):
+        pass
+    def __call__(self, ppp):
+        pass
+
+
+# TODO: Implement ToTensor transformation
+class CenterCrop(Transform):
+    def __init__(self):
+        pass
+    def __call__(self, ppp):
+        pass
+
+"""
+# Pad transformation
+def custom_pad_factory(pads_begin, pads_end, pad_mode, arg_pad_value):
+    @custom_preprocess_function
+    def custom_pad(output: ov.runtime.Output):
+        pads_begin_node = ops.constant(np.array(pads_begin, dtype=np.int64))
+        pads_end_node = ops.constant(np.array(pads_end, dtype=np.int64))
+        if arg_pad_value is not None:
+            pad_value_node = ops.constant(np.array(arg_pad_value, dtype=map_dtype(output.get_element_type())))
+            return ops.pad(output, pads_begin_node, pads_end_node, pad_value_node, pad_mode)
+        else:
+            return ops.pad(output, pads_begin_node, pads_end_node, pad_mode)
+    return custom_pad
+
+class Pad(Transform):
+    def __init__(self, pads_begin, pads_end, pad_mode="constant", arg_pad_value=None):
+        self.pads_begin = pads_begin
+        self.pads_end = pads_end
+        self.pad_mode = pad_mode
+        self.arg_pad_value = arg_pad_value
+
+    def __call__(self, ppp):
+        pad_func = custom_pad_factory(self.pads_begin, self.pads_end, self.pad_mode, self.arg_pad_value)
+        ppp.output(0).postprocess().custom(pad_func)
+"""
+
+
+# trying abs preprocessing
+class abs(Transform):
+    def __init__(self):
+        pass
+    def __call__(self, ppp):
+        return ppp.output(0).postprocess().custom(f.custom_preprocess_abs)

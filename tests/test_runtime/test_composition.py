@@ -44,7 +44,51 @@ def test_Compose(shape, dtype):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    my_result = my_preprocess([data.shape], [data.dtype])(data)[0]
+    my_result = my_preprocess(data)[0]
+    torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
+
+    assert np.allclose(my_result, torch_result, rtol=1e-03)
+
+
+@pytest.mark.parametrize("shape, dtype, p", [
+    ((1, 3, 224, 224), np.float32, 1.0),
+    ((1, 3, 224, 224), np.float64, 0.5),
+])
+def test_RandomApply(shape, dtype, p):
+    data = np.ones(shape, dtype=dtype)
+
+    my_preprocess = RandomApply([
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ], p)
+
+    torch_preprocess = transforms.RandomApply([
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ], p)
+
+    my_result = my_preprocess(data)[0]
+    torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
+
+    assert np.allclose(my_result, torch_result, rtol=1e-03)
+
+# TODO: Needs to be tested with more transformations
+@pytest.mark.parametrize("shape, dtype", [
+    ((1, 3, 224, 224), np.float32),
+    ((1, 3, 224, 224), np.float64),
+])
+def test_RandomOrder(shape, dtype):
+    data = np.ones(shape, dtype=dtype)
+
+    np.random.seed(0)  # Set the seed for numpy
+    my_preprocess = RandomOrder([
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    torch.manual_seed(0)  # Set the seed for PyTorch
+    torch_preprocess = transforms.RandomOrder([
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    my_result = my_preprocess(data)[0]
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
     assert np.allclose(my_result, torch_result, rtol=1e-03)

@@ -34,6 +34,6 @@ def test_abs(shape, dtype):
     preprocess = Compose([
         abs(),
     ])
-    tensor = preprocess([data.shape], [data.dtype])(data)[0]
+    tensor = preprocess(data)[0]
     print("result = ", tensor)
 

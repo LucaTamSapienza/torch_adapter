@@ -1,6 +1,10 @@
 import openvino.runtime.opset14 as ops
 import openvino as ov
+from openvino.runtime import Tensor
 from openvino.runtime.utils.decorators import custom_preprocess_function
+import numpy as np
+from PIL import Image
+from typing import Union
 
 
 def create_empty_model(shapes, dtype):

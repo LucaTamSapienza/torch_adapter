@@ -1,9 +1,8 @@
 import numpy as np
 from openvino.preprocess import PrePostProcessor
 import openvino as ov
-import openvino.runtime.opset14 as ops
 from openvino.runtime import Layout
-from src.torch_adapter.transforms.util import create_empty_model
+from .util import create_empty_model
 
 
 # Base class for all Composition classes
@@ -12,7 +11,7 @@ class Composition:
         self._compiled_model = None
         self._last_data = None
 
-    def _needs_recompile(self, data):
+    def _needs_recompile(self, data) -> bool:
         if self._last_data is None:
             self._last_data = data
             return True
@@ -31,6 +30,7 @@ class Composition:
         for transform in transforms:
             transform(ppp)
 
+        # Build the preprocessing pipeline
         final_model = ppp.build()
         self._compiled_model = ov.Core().compile_model(final_model, "CPU")
 

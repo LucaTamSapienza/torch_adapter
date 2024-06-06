@@ -15,6 +15,10 @@ def create_empty_model(shapes, dtype):
     :param dtype: List of data types
     :return: OpenVINO model
     """
+    
+    # the model needs to be "dynamic" so we need to fill the shapes with -1
+    shapes = [[-1 for _ in range(len(shape))] for shape in shapes] 
+
     # If shapes and datatypes have different lengths, fill datatypes with ov.Type.f32
     if len(shapes) != len(dtype):
         dtype.extend([ov.Type.f32] * (len(shapes) - len(dtype)))

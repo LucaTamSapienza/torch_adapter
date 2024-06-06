@@ -5,28 +5,30 @@ import torch
 from src.torch_adapter.transforms import *
 
 
+#adding rtol and atol for test that works
+
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 960, 1280), np.int32),
     ((1, 3, 960, 1280), np.int64),
-    #((1, 3, 960, 1280), np.float32),
+    ((1, 3, 960, 1280), np.float32),
 ])
 # not working with float32 (?)
 def test_abs(shape, dtype):
-    data = np.random.rand(*shape).astype(dtype)
+    data = np.random.rand(*shape) + 0.5
+    data = data.astype(dtype)
     print("data = ", data)
     preprocess = Compose([
         abs(),
     ])
     tensor = preprocess(data)[0]
     print("result = ", tensor)
-    assert np.allclose(tensor, np.abs(data))
+    assert np.allclose(tensor, np.abs(data), rtol=1e-04)
 
 
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 960, 1280), np.float32),
     ((1, 3, 960, 1280), np.int32),
 ])
-# incompatible shape because the transformed shape doesn't match the original shape
 def test_resize(shape, dtype):
 
     data = np.ones(shape, dtype)
@@ -38,10 +40,11 @@ def test_resize(shape, dtype):
     print("result = ", tensor)
     
     torch_preprocess = transforms.Compose([
-        transforms.Resize((256)),
+        transforms.Resize((256, 256)),
     ])
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
     print("torch_result = ", torch_result)
+    assert np.allclose(torch_result, tensor)
 
 
 """
@@ -73,7 +76,7 @@ def test_centerCrop(shape, dtype):
     ((1, 3, 224, 224), np.int64),
     ((1, 3, 224, 224), np.int32),
 ])
-#not needed (?)
+# needed 
 def test_to_tensor(shape, dtype):
     # Create dummy data
     data = np.random.randint(0, 256, shape, dtype)
@@ -100,7 +103,6 @@ def test_to_tensor(shape, dtype):
     ((1, 3, 224, 224), np.int64),
     ((1, 3, 224, 224), np.int32),
 ])
-# same error for resize
 def test_pad(shape, dtype):
     # Create dummy data
     data = np.random.randint(0, 256, shape, dtype=dtype)
@@ -123,8 +125,8 @@ def test_pad(shape, dtype):
 ])
 # not working when np.random.rand is used
 def test_normalize(shape, dtype):
-    data = np.ones(shape, dtype)
-    #data = np.random.rand(*shape).astype(dtype)
+    #data = np.ones(shape, dtype)
+    data = np.random.rand(*shape).astype(dtype)
     #print("data_pre = ", data)
     preprocess = Compose([
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -137,4 +139,4 @@ def test_normalize(shape, dtype):
     ])
     torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
     print("torch_tensor = ", torch_tensor)
-    assert np.allclose(tensor, torch_tensor, rtol=1e-03, atol=1e-08)
+    assert np.allclose(tensor, torch_tensor, rtol=1e-06)

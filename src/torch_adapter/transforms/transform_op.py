@@ -28,17 +28,16 @@ class Scale(Transform):
 class Resize(Transform):
     """
     input: PIL image or Tensor
+
+    result: resized Image
     """
-    def __init__(self, height, width, algorithm=ResizeAlgorithm.RESIZE_LINEAR):
+    def __init__(self, height, width, algorithm=ResizeAlgorithm.RESIZE_BILINEAR_PILLOW):
         self.height = height
         self.width = width
         self.algorithm = algorithm
 
     def __call__(self, ppp):
         input_data = ppp.input()
-        # Get the shape of the input tensor (HOW??????)
-        #input_shape = input_data.get_shape()
-        # Set the shape of the tensor to the resized dimensions
         print("input_data = ", input_data)
         #ppp.input().tensor().set_shape([input_shape[0], input_shape[1], self.height, self.width])
         ppp.input().preprocess().resize(self.algorithm, self.height, self.width)
@@ -106,7 +105,8 @@ class ConvertColor(Transform):
 # Not needed (?)
 class ToTensor(Transform):
     """
-    convert PIL image or numpy.ndarray -> Tensor
+    convert numpy.ndarray -> Tensor
+    TBA support PIL Image
     """
     def __init__(self):
         pass
@@ -135,7 +135,6 @@ class ConvertImageDtype(Transform):
 
 
 # Pad transformation
-#TODO
 class Pad(Transform):
     def __init__(self, padding, fill, mode = "constant"):
         self.padding = padding
@@ -150,8 +149,6 @@ class Pad(Transform):
 
     def __call__(self, ppp):
         ppp.input().preprocess().custom(self.custom_preprocess_pad())
-
-
 
 
 # trying custom preprocessing

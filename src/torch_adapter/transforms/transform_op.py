@@ -28,7 +28,7 @@ class Scale(Transform):
 class Resize(Transform):
     """
     input: PIL image or Tensor
-
+    
     result: resized Image
     """
     def __init__(self, height, width, algorithm=ResizeAlgorithm.RESIZE_BILINEAR_PILLOW):
@@ -38,8 +38,7 @@ class Resize(Transform):
 
     def __call__(self, ppp):
         input_data = ppp.input()
-        print("input_data = ", input_data)
-        #ppp.input().tensor().set_shape([input_shape[0], input_shape[1], self.height, self.width])
+        # print("input_data = ", input_data)
         ppp.input().preprocess().resize(self.algorithm, self.height, self.width)
 
 
@@ -47,26 +46,26 @@ class Resize(Transform):
 # CenterCrop transformation
 #TODO
 class CenterCrop(Transform):
-    def __init__(self, height_ratio, width_ratio):
-        self.height_ratio = height_ratio
-        self.width_ratio = width_ratio
+    def __init__(self, crop_height, crop_width, shape):
+        self.crop_height = crop_height
+        self.crop_width = crop_width
+        self.shape = shape
 
     def __call__(self, ppp):
-        # Get the shape of the input tensor
-        #HOW
+        # Recupera la dimensione dell'immagine di input
+        input_height, input_width = self.shape[-2], self.shape[-1]
 
-        # Calculate the crop dimensions
-        crop_height = int(input_height * self.height_ratio)
-        crop_width = int(input_width * self.width_ratio)
+        # Calcola le coordinate superiori e sinistre per il ritaglio centrato
+        crop_top = (input_height - self.crop_height) // 2
+        crop_left = (input_width - self.crop_width) // 2
 
-        # Calculate the coordinates for the center crop
-        y1 = (input_height - crop_height) // 2
-        y2 = y1 + crop_height
-        x1 = (input_width - crop_width) // 2
-        x2 = x1 + crop_width
+        # Define the top-left and bottom-right coordinates of the crop
+        crop_top_left = [crop_top, crop_left]
+        crop_bottom_right = [crop_top + self.crop_height, crop_left + self.crop_width]
 
-        # Apply the crop
-        ppp.input().preprocess().crop([x1, y1], [x2, y2])
+        # Applica il ritaglio centrato
+        ppp.input().preprocess().crop(crop_top_left, crop_bottom_right)
+        
 
 # Normalize transformation
 class Normalize(Transform):
@@ -102,7 +101,8 @@ class ConvertColor(Transform):
         ppp.input().preprocess().convert_color(self.color_format)
 
 
-# Not needed (?)
+# ToTensor transformation
+# need to implement support for Pil image
 class ToTensor(Transform):
     """
     convert numpy.ndarray -> Tensor
@@ -111,6 +111,7 @@ class ToTensor(Transform):
     def __init__(self):
         pass
     def __call__(self, ppp):
+        print("ppp = ", ppp.__class__.__name__)
         ppp.input().tensor()
 
 

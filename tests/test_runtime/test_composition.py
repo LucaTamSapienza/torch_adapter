@@ -35,24 +35,28 @@ print("result = ", result)
 ])
 def test_Compose(shape, dtype):
     data = np.ones(shape, dtype)
-
-    my_preprocess = Compose([
-        Resize(256, 256),
-        Pad((0, 0, 1, 1), (0, 0, 1, 1)),
+    
+    #changing the order will create problems
+    ov_preprocess = Compose([
+        Resize((256, 256)),
+        CenterCrop((224, 224)),
+        Pad((1, 1)),
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
     ])
 
     torch_preprocess = transforms.Compose([
         transforms.Resize((256, 256)),
+        transforms.CenterCrop((224, 224)),
         transforms.Pad((1, 1)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    my_result = my_preprocess(data)[0]
+    ov_result = ov_preprocess(data)[0]
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
     #print("my_result = ", my_result)
     #print("torch_result = ", torch_result)
-    assert np.allclose(my_result, torch_result, rtol=1e-03) # ieee754
+    assert np.allclose(ov_result, torch_result, rtol=1e-03) # ieee754
 
 
 @pytest.mark.parametrize("shape, dtype, p", [
@@ -61,13 +65,14 @@ def test_Compose(shape, dtype):
     ((1, 3, 224, 224), np.float32, 0.8),
     ((1, 3, 224, 224), np.float16, 0.2),
 ])
-@pytest.mark.xfail(reason="since the randomApply has a probability p that the transformation is applied, the results will not be the same everytime.")
+@pytest.mark.xfail(reason="since the randomApply has a probability p that the transformation \
+                   is applied, the results will not be the same everytime.")
 def test_RandomApply(shape, dtype, p):
     data = np.ones(shape, dtype=dtype)
 
-    my_preprocess = RandomApply([
-        Resize(256, 256),
-        Pad((0, 0, 1, 1), (0, 0, 1, 1)),
+    ov_preprocess = RandomApply([
+        Resize((256, 256)),
+        Pad((1, 1)),
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ], p)
 
@@ -77,25 +82,25 @@ def test_RandomApply(shape, dtype, p):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ], p)
 
-    my_result = my_preprocess(data)[0]
+    ov_result = ov_preprocess(data)[0]
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
-    assert np.allclose(my_result, torch_result, rtol=1e-03)
+    assert np.allclose(ov_result, torch_result, rtol=1e-03)
 
 
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 980, 1260), np.float32),
     ((1, 3, 224, 224), np.float32),
 ])
-@pytest.mark.xfail(reason="since the randomOrder has a random order of the transformations, the output will change if the transformation \
-                            are applied in different order.")
+@pytest.mark.xfail(reason="since the randomOrder has a random order of the transformations, \
+                   the output will change if the transformation are applied in different order.")
 def test_RandomOrder(shape, dtype):
     data = np.ones(shape, dtype)
 
     np.random.seed(0)  # Set the seed for numpy
-    my_preprocess = RandomOrder([
-        Resize(256, 256),
-        Pad((0, 0, 1, 1), (0, 0, 1, 1)),
+    ov_preprocess = RandomOrder([
+        Resize((256, 256)),
+        Pad((1, 1)),
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
@@ -106,10 +111,10 @@ def test_RandomOrder(shape, dtype):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    my_result = my_preprocess(data)[0]
+    ov_result = ov_preprocess(data)[0]
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
-    assert np.allclose(my_result, torch_result, rtol=1e-03)
+    assert np.allclose(ov_result, torch_result, rtol=1e-03)
 
 
 

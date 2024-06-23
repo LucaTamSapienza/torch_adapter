@@ -2,9 +2,8 @@ import openvino.runtime.opset14 as ops
 import openvino as ov
 from openvino.runtime import Tensor
 from openvino.runtime.utils.decorators import custom_preprocess_function
-import numpy as np
-from PIL import Image
-from typing import Union
+from typing import List
+import copy
 
 
 def create_empty_model(shapes, dtype):
@@ -40,3 +39,11 @@ def create_empty_model(shapes, dtype):
 @custom_preprocess_function
 def custom_preprocess_abs(output: ov.runtime.Output):
     return ops.abs(output)
+
+
+def _NHWC_to_NCHW(input_shape: List) -> List:
+    new_shape = copy.deepcopy(input_shape)
+    new_shape[1] = input_shape[3]
+    new_shape[2] = input_shape[1]
+    new_shape[3] = input_shape[2]
+    return new_shape

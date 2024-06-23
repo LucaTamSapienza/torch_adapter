@@ -27,8 +27,12 @@ class Composition:
         # Set the layout of the input tensor to NCHW by default
         ppp.input().tensor().set_layout(Layout("NCHW"))
 
+        # last_shape = self._last_data.shape
+        meta = {"input_shape": self._last_data.shape, "layout": Layout("NCHW")}
         for transform in transforms:
-            transform(ppp)
+            temp = transform(ppp, meta)
+            meta["input_shape"] = temp[0]
+            meta["layout"] = temp[1]
 
         # Build the preprocessing pipeline
         final_model = ppp.build()
@@ -56,20 +60,26 @@ class RandomApply(Composition):
         self.p = p
     
     # override the _compile_model inherited from Composition because the implementation is different
-    def _compile_model(self):
+    def _compile_model(self, transforms):
         model = create_empty_model([self._last_data.shape], [self._last_data.dtype])
         ppp = PrePostProcessor(model)
 
         ppp.input().tensor().set_layout(Layout("NCHW"))
+
+        meta = {"input_shape": self._last_data.shape, "layout": Layout("NCHW")}
+
         if np.random.random() < self.p:
-            for transform in self.transforms:
-                transform(ppp)
+            for transform in transforms:
+                temp = transform(ppp, meta)
+                meta["input_shape"] = temp[0]
+                meta["layout"] = temp[1]
+
         final_model = ppp.build()
         self._compiled_model = ov.Core().compile_model(final_model, "CPU")
 
     def __call__(self, data):
         if self._needs_recompile(data) or self._compiled_model is None:
-            self._compile_model()
+            self._compile_model(self.transforms)
 
         return self._compiled_model(data, share_inputs=True, share_outputs=True)
 
@@ -81,20 +91,24 @@ class RandomOrder(Composition):
         self.transforms = transforms
 
     # Same logic as RandomApply
-    def _compile_model(self):
+    def _compile_model(self, transforms):
         model = create_empty_model([self._last_data.shape], [self._last_data.dtype])
         ppp = PrePostProcessor(model)
 
         ppp.input().tensor().set_layout(Layout("NCHW"))
         order = np.random.permutation(len(self.transforms))
 
+        meta = {"input_shape": self._last_data.shape, "layout": Layout("NCHW")}
+
         for i in order:
-            self.transforms[i](ppp)
+            temp = transforms[i](ppp, meta)
+            meta["input_shape"] = temp[0]
+            meta["layout"] = temp[1]
         final_model = ppp.build()
         self._compiled_model = ov.Core().compile_model(final_model, "CPU")
 
     def __call__(self, data):
         if self._needs_recompile(data) or self._compiled_model is None:
-            self._compile_model()
+            self._compile_model(self.transforms)
 
         return self._compiled_model(data, share_inputs=True, share_outputs=True)

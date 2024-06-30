@@ -44,9 +44,10 @@ class Compose(Composition):
     def __init__(self, transforms):
         super().__init__()
         self.transforms = transforms
-
+    # @profile -> uncomment this to profile the function
     def __call__(self, data):
         if self._needs_recompile(data) or self._compiled_model is None:
+            #print("Recompiling...")
             self._compile_model(self.transforms)
 
         return self._compiled_model(data, share_inputs=True, share_outputs=True)

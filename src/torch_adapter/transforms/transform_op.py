@@ -69,20 +69,18 @@ class Resize(Transform):
         # rescale the smaller image edge
         current_h, current_w = meta["input_shape"][2:4] if meta["layout"] == Layout("NCHW") else meta["input_shape"][1:3]
         if current_h > current_w:
-            target_h = int(target_w * (current_h / current_h))  # ask to mentor, in the original code it was 
-                                                                # target_h = int(self.size * (current_h / current_w))
-                                                                # but self.size is a tuple
+            target_h = int(target_w * (current_h / current_h))
         elif current_w > current_h:
-            target_w = int(target_h * (current_w / current_w))  # same as above
+            target_w = int(target_h * (current_w / current_w))
 
         ppp.input().tensor().set_layout(Layout("NCHW"))
 
         input_shape = list(meta["input_shape"])
 
-        input_shape[meta["layout"].get_index_by_name("H")] = target_h # ask to mentor, with -1 it was not working
-        input_shape[meta["layout"].get_index_by_name("W")] = target_w # ask to mentor, with -1 it was not working
+        input_shape[meta["layout"].get_index_by_name("H")] = target_h
+        input_shape[meta["layout"].get_index_by_name("W")] = target_w
 
-        #ppp.input().tensor().set_shape(input_shape) -> this is not working, ask to mentor
+        #ppp.input().tensor().set_shape(input_shape)
         ppp.input().preprocess().resize(resize_mode_map[self.interpolation], target_h, target_w)
         return [input_shape, Layout("NCHW")]
 
@@ -112,7 +110,7 @@ class CenterCrop(Transform):
         top_right = list(input_shape[:-2]) + top_right if meta["layout"] == Layout("NCHW") else input_shape[:1] + top_right + input_shape[-1:]
         
         ppp.input().preprocess().crop(bottom_left, top_right)
-        # returning the wrond shape? ask to mentor
+        
         return [[input_shape[0], input_shape[1], target_size[0], target_size[1]], meta["layout"]]
 
 

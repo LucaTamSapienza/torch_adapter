@@ -1,3 +1,4 @@
+import src.torch_adapter as torch_adapter
 from src.torch_adapter.AdapterModel import AdapterModel
 from src.torch_adapter.transforms import *
 import torch
@@ -8,7 +9,7 @@ import numpy as np
 
 @pytest.mark.parametrize("input_shape", [(1, 3, 224, 224), (1, 3, 299, 299)])
 def test_inference(input_shape):
-    adapter_model = AdapterModel(torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True))
+    adapter_model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
     adapter_model.eval()
     input_tensor = torch.randn(input_shape)
     output = adapter_model(input_tensor)
@@ -22,9 +23,8 @@ def test_inference(input_shape):
     #((1, 3, 224, 224), np.int64),
 ])
 def test_inference_with_transforms(shape, dtype):
-    model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
-    data = np.random.rand(*shape) + 0.5
-    data = data.astype(dtype)
+    model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+    data = np.random.rand(*shape).astype(dtype)
 
     ov_model = AdapterModel(model)
 
@@ -39,6 +39,8 @@ def test_inference_with_transforms(shape, dtype):
     torch_data = torch.tensor(data, dtype = torch.float32)
     torch_tensor = torch_preprocess(torch_data)
     # input_batch = torch_tensor.unsqueeze(0)
+
+    assert np.allclose(torch_tensor.numpy(), data, rtol=1e-01)
 
     with torch.no_grad():
         output = model(torch_tensor)

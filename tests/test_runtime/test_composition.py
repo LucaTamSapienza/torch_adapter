@@ -35,6 +35,7 @@ print("result = ", result)
 ])
 def test_Compose(shape, dtype):
     data = np.ones(shape, dtype)
+    #data = np.random.randint(255, size=(280, 280, 3), dtype=np.uint8)
     
     #changing the order will create problems
     ov_preprocess = Compose([

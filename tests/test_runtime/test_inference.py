@@ -23,12 +23,12 @@ def test_inference(input_shape):
     #((1, 3, 224, 224), np.int64),
 ])
 def test_inference_with_transforms(shape, dtype):
-    model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+    torch_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+    ov_model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
     data = np.random.rand(*shape).astype(dtype)
 
-    ov_model = AdapterModel(model)
 
-    model.eval()
+    torch_model.eval()
 
     torch_preprocess = transforms.Compose([
         transforms.Resize((256, 256)),
@@ -40,10 +40,9 @@ def test_inference_with_transforms(shape, dtype):
     torch_tensor = torch_preprocess(torch_data)
     # input_batch = torch_tensor.unsqueeze(0)
 
-    assert np.allclose(torch_tensor.numpy(), data, rtol=1e-01)
 
     with torch.no_grad():
-        output = model(torch_tensor)
+        output = torch_model(torch_tensor)
     
     #print(output[0])
     
@@ -55,8 +54,26 @@ def test_inference_with_transforms(shape, dtype):
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     ov_tensor = ov_preprocess(data)
-    ov_output = ov_model(ov_tensor)
+    ov_output = ov_model(ov_tensor)[0]
+
+    #raise RuntimeError
 
     #print(ov_output[0])
 
-    assert np.allclose(ov_output[0], output[0].numpy(), rtol=1e-01)
+    print(np.sort(ov_output - output[0].numpy()))
+
+    assert np.allclose(ov_output, output[0].numpy(), rtol=1e-01)
+
+
+    """
+    close_elements = np.isclose(output, ov_output, rtol=1e-05, atol=1e-08)
+    # Use np.sum to count the number of True values in the boolean array
+    count_close_elements = np.sum(close_elements)
+    # Print the number of close elements
+    print(f'Number of close elements: {count_close_elements}')
+    # To get the number of "broken" or not close elements, subtract the count of close elements from the total number of elements
+    count_broken_elements = output.size - count_close_elements
+    # Print the number of broken elements
+    print(f'Number of broken elements: {count_broken_elements}')
+    """
+

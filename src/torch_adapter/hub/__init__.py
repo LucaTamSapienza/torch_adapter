@@ -1,5 +1,5 @@
 import torch.hub 
-from src.torch_adapter import AdapterModel as Model
+from src.torch_adapter.AdapterModel import AdapterModel
 
 def load(*args, **kwargs):
-    return Model(torch.hub.load(*args, **kwargs))
+    return AdapterModel(torch.hub.load(*args, **kwargs))

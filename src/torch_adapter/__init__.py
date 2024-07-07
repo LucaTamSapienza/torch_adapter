@@ -1,2 +1,2 @@
 from .hub import load
-from .AdapterModel import AdapterModel
+from .util import AdapterModel

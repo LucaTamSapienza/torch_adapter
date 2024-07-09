@@ -22,16 +22,13 @@ def create_empty_model(shapes, dtype):
     if len(shapes) != len(dtype):
         dtype.extend([ov.Type.f32] * (len(shapes) - len(dtype)))
     
-    parameters = []
-    for shape, dtype in zip(shapes, dtype):
-        param = ops.parameter(shape, dtype)
-        parameters.append(param)
+    parameters = [ops.parameter(shape, dtype) for shape, dtype in zip(shapes, dtype)]
 
-    outputs = []
-    for param in parameters:
-        output = ops.result(param)
+    def set_friendly_name(output):
         output.friendly_name = "result"
-        outputs.append(output)
+        return output
+
+    outputs = [set_friendly_name(ops.result(param)) for param in parameters]
 
     return ov.Model(outputs, parameters, "empty_model")
 

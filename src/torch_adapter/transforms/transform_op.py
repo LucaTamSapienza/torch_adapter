@@ -174,7 +174,7 @@ class ToTensor(Transform):
         return [input_shape, layout]
 
 
-# TODO: to be tested -> how(?)
+# ConvertImageDtype transformation
 class ConvertImageDtype(Transform):
     """
     Convert a tensor image to the given `dtype` and scale the values accordingly

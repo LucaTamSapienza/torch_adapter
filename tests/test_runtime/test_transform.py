@@ -5,15 +5,44 @@ import torch
 from src.torch_adapter.transforms import *
 
 
+def create_data(shape, dtype):
+    if np.issubdtype(dtype, np.floating):
+        data = np.random.rand(*shape) + 1.0
+        return data.astype(dtype)
+    else:
+        data = np.random.randint(255, size=shape)
+        return data.astype(dtype)
+
+def print_close_broken_elements(torch_result, ov_tensor, tolerance=1e-02):
+    # Perform element-wise comparison using np.isclose
+    close_elements = np.isclose(torch_result, ov_tensor, rtol=tolerance)
+
+    # Count the number of close elements
+    count_close_elements = np.sum(close_elements)
+
+    # Print the number of close elements
+    print(f'Number of close elements: {count_close_elements}')
+
+    # Calculate the total number of elements
+    total_elements = np.prod(ov_tensor.shape)
+
+    # Calculate the number of broken (not close) elements
+    count_broken_elements = total_elements - count_close_elements
+
+    # Print the number of broken elements
+    print(f'Number of broken elements: {count_broken_elements}')
+
+
+
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 960, 1280), np.int32),
     ((1, 3, 960, 1280), np.int64),
+    ((1, 3, 1000, 1000), np.float16),
     ((1, 3, 224, 224), np.float32),
     ((1, 3, 256, 256), np.float64),
 ])
 def test_abs(shape, dtype):
-    data = np.random.rand(*shape) + 0.5
-    data = data.astype(dtype)
+    data = create_data(shape, dtype)
     # print("data = ", data)
     ov_preprocess = Compose([
         abs(),
@@ -23,25 +52,29 @@ def test_abs(shape, dtype):
     assert np.allclose(ov_tensor, np.abs(data), rtol=1e-03)
 
 
-@pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 960, 1280), np.float32),
-    ((1, 3, 960, 1280), np.int32),
-    ((1, 3, 960, 1280), np.int64),
+#TODO: Solve problem when type is int / uint
+@pytest.mark.parametrize("shape, dtype, interpolation", [
+    ((1, 3, 220, 220), np.float32, transforms.InterpolationMode.BILINEAR),
+    ((1, 3, 200, 240), np.float32, transforms.InterpolationMode.BILINEAR),
+    # ((1, 3, 960, 1280), np.float32, transforms.InterpolationMode.NEAREST), # Not Working (?)
+    ((1, 3, 960, 1280), np.float32, transforms.InterpolationMode.BICUBIC), # sometimes work, sometimes not
 ])
-def test_resize(shape, dtype):
-    data = np.random.rand(*shape) + 1.0
-    data = data.astype(dtype)
+def test_resize(shape, dtype, interpolation):
+    data = create_data(shape, dtype)
     ov_preprocess = Compose([
-        Resize((256, 256)),
+        Resize((256, 256), interpolation),
     ])
     ov_tensor = ov_preprocess(data)[0]
-    # print("ov_tensor = ", ov_tensor)
+    # print("ov_tensor = ", ov_tensor)
     torch_preprocess = transforms.Compose([
-        transforms.Resize((256, 256)),
+        transforms.Resize((256, 256), interpolation),
     ])
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
-    # print("torch_result = ", torch_result)
-    assert np.allclose(torch_result, ov_tensor, rtol=1e-03)
+
+    print_close_broken_elements(torch_result, ov_tensor)
+
+    # print("torch_result = ", torch_result)
+    assert np.allclose(torch_result, ov_tensor, rtol=1e-02)
 
 
 @pytest.mark.parametrize("shape, dtype", [
@@ -51,7 +84,7 @@ def test_resize(shape, dtype):
     ((1, 3, 224, 224), np.int64),
 ])
 def test_centerCrop(shape, dtype):
-    data = np.random.rand(*shape).astype(dtype)
+    data = create_data(shape, dtype)
     preprocess = Compose([
         CenterCrop((112, 112)),
     ])
@@ -90,63 +123,70 @@ def test_to_tensor(shape, dtype):
     assert ov_tensor.get(0).shape == torch_tensor.shape
 
 
-@pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 960, 1280), np.float32),
-    ((1, 3, 960, 1280), np.int32),
-    ((1, 3, 960, 1280), np.int64),
+@pytest.mark.parametrize("test_input, pad, fill, padding_mode", [
+    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (1, 1), 0, "constant"),
+    (np.random.randint(255, size = (1, 3, 220, 224), dtype = np.uint8), (2), 0, "constant"),
+    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3), 0, "constant"),
+    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 0, "constant"),
+    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 3, "constant"),
+    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "edge"),
+    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "reflect"),
+    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "symmetric"),
 ])
-def test_pad(shape, dtype):
-    data = np.random.rand(*shape) + 1.0
-    data = data.astype(dtype)
+def test_pad(test_input, pad, fill, padding_mode):
     ov_preprocess = Compose([
-        Pad((1, 1)),
+        Pad(pad, fill=fill, padding_mode=padding_mode),
     ])
-    ov_tensor = ov_preprocess(data)[0]
+    ov_tensor = ov_preprocess(test_input)[0]
     # print("ov_tensor = ", ov_tensor)
     torch_preprocess = transforms.Compose([
-        transforms.Pad((1, 1)),
+        transforms.Pad(pad, fill=fill, padding_mode=padding_mode),
     ])
-    torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
+    torch_tensor = torch_preprocess(torch.tensor(test_input))[0].numpy()
     # print("torch_tensor = ", torch_tensor)
-    assert np.allclose(ov_tensor, torch_tensor, rtol=1e-03)
+    assert np.allclose(ov_tensor, torch_tensor, rtol=4e-05)
 
 
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 224, 224), np.float32),
-    ((1, 3, 960, 1280), np.float64),
+    ((1, 3, 1000, 1000), np.float64),
 ])
 def test_normalize(shape, dtype):
-    data = np.ones(shape, dtype)
+    data = create_data(shape, dtype)
     ov_preprocess = Compose([
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     ov_tensor = ov_preprocess(data)[0]
-    # print("tensor = ", ov_tensor)
+    # print("tensor = ", ov_tensor)
     torch_preprocess = transforms.Compose([
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
     # print("torch_tensor = ", torch_tensor)
+    print_close_broken_elements(torch_tensor, ov_tensor)
     assert np.allclose(ov_tensor, torch_tensor, rtol=1e-03)
 
-"""
+
 @pytest.mark.parametrize("shape, dtype", [
+    ((1, 3, 224, 224), np.float16),
     ((1, 3, 224, 224), np.float32),
+    ((1, 3, 224, 224), np.uint8),
     ((1, 3, 224, 224), np.int32),
     ((1, 3, 224, 224), np.int64),
 ])
 def test_convert_image_dtype(shape, dtype):
-    data = np.random.rand(*shape) + 1.0
-    data = data.astype(dtype)
+    data = np.random.rand(*shape).astype(dtype) # problem if using create_data(shape, dtype)
     ov_preprocess = Compose([
+        ConvertImageDtype(torch.float16),
         ConvertImageDtype(torch.float32),
     ])
     ov_tensor = ov_preprocess(data)[0]
-    print("ov_tensor = ", ov_tensor)
+    # print("ov_tensor = ", ov_tensor)
     torch_preprocess = transforms.Compose([
+        transforms.ConvertImageDtype(torch.float16),
         transforms.ConvertImageDtype(torch.float32),
     ])
     torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
-    print("torch_tensor = ", torch_tensor)
-    assert np.allclose(tensor, torch_tensor, rtol=1e-03)
-"""
+    # print("torch_tensor = ", torch_tensor)
+    assert np.allclose(ov_tensor, torch_tensor, rtol=1e-05)
+

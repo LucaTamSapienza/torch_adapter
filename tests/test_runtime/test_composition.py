@@ -16,7 +16,7 @@ def test_Compose_1(shape, dtype):
     data = np.random.rand(*shape) + 1.0
     data = data.astype(dtype)
     
-    #TODO: to be fixed -> changing the order will create problems 
+    #TODO: to be fixed -> changing the order will create problems
     ov_preprocess = Compose([
         Resize((256, 256)),
         CenterCrop((224, 224)),
@@ -121,4 +121,3 @@ def test_RandomOrder(shape, dtype):
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
     assert np.allclose(ov_result, torch_result, rtol=1e-03)
-

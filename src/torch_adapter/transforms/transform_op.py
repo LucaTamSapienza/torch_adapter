@@ -198,16 +198,16 @@ class ConvertImageDtype(Transform):
 
 # Pad transformation
 class Pad(Transform):
-    def __init__(self, padding, fill=0, mode = "constant"):
+    def __init__(self, padding, fill=0, padding_mode = "constant"):
         self.padding = padding
         self.fill = fill
-        self.mode = mode
+        self.padding_mode = padding_mode
 
     def __call__(self, ppp: PrePostProcessor, meta: Dict) -> List:
         image_dimensions = list(meta["input_shape"][2:])
         layout = meta["layout"]
         torch_padding = self.padding
-        pad_mode = self.mode
+        pad_mode = self.padding_mode
 
         if pad_mode == "constant":
             if (isinstance(self.fill, tuple)):

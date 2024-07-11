@@ -3,35 +3,7 @@ import numpy as np
 from torchvision import transforms
 import torch
 from src.torch_adapter.transforms import *
-
-
-def create_data(shape, dtype):
-    if np.issubdtype(dtype, np.floating):
-        data = np.random.rand(*shape) + 1.0
-        return data.astype(dtype)
-    else:
-        data = np.random.randint(255, size=shape)
-        return data.astype(dtype)
-
-def print_close_broken_elements(torch_result, ov_tensor, tolerance=1e-02):
-    # Perform element-wise comparison using np.isclose
-    close_elements = np.isclose(torch_result, ov_tensor, rtol=tolerance)
-
-    # Count the number of close elements
-    count_close_elements = np.sum(close_elements)
-
-    # Print the number of close elements
-    print(f'Number of close elements: {count_close_elements}')
-
-    # Calculate the total number of elements
-    total_elements = np.prod(ov_tensor.shape)
-
-    # Calculate the number of broken (not close) elements
-    count_broken_elements = total_elements - count_close_elements
-
-    # Print the number of broken elements
-    print(f'Number of broken elements: {count_broken_elements}')
-
+from tests import util as f
 
 
 @pytest.mark.parametrize("shape, dtype", [
@@ -42,7 +14,7 @@ def print_close_broken_elements(torch_result, ov_tensor, tolerance=1e-02):
     ((1, 3, 256, 256), np.float64),
 ])
 def test_abs(shape, dtype):
-    data = create_data(shape, dtype)
+    data = f.create_data(shape, dtype)
     # print("data = ", data)
     ov_preprocess = Compose([
         abs(),
@@ -60,7 +32,7 @@ def test_abs(shape, dtype):
     ((1, 3, 960, 1280), np.float32, transforms.InterpolationMode.BICUBIC), # sometimes work, sometimes not
 ])
 def test_resize(shape, dtype, interpolation):
-    data = create_data(shape, dtype)
+    data = f.create_data(shape, dtype)
     ov_preprocess = Compose([
         Resize((256, 256), interpolation),
     ])
@@ -71,7 +43,7 @@ def test_resize(shape, dtype, interpolation):
     ])
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
-    print_close_broken_elements(torch_result, ov_tensor)
+    f.print_close_broken_elements(torch_result, ov_tensor)
 
     # print("torch_result = ", torch_result)
     assert np.allclose(torch_result, ov_tensor, rtol=1e-02)
@@ -84,7 +56,7 @@ def test_resize(shape, dtype, interpolation):
     ((1, 3, 224, 224), np.int64),
 ])
 def test_centerCrop(shape, dtype):
-    data = create_data(shape, dtype)
+    data = f.create_data(shape, dtype)
     preprocess = Compose([
         CenterCrop((112, 112)),
     ])
@@ -152,7 +124,7 @@ def test_pad(test_input, pad, fill, padding_mode):
     ((1, 3, 1000, 1000), np.float64),
 ])
 def test_normalize(shape, dtype):
-    data = create_data(shape, dtype)
+    data = f.create_data(shape, dtype)
     ov_preprocess = Compose([
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
@@ -163,7 +135,7 @@ def test_normalize(shape, dtype):
     ])
     torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
     # print("torch_tensor = ", torch_tensor)
-    print_close_broken_elements(torch_tensor, ov_tensor)
+    f.print_close_broken_elements(torch_tensor, ov_tensor)
     assert np.allclose(ov_tensor, torch_tensor, rtol=1e-03)
 
 
@@ -175,7 +147,7 @@ def test_normalize(shape, dtype):
     ((1, 3, 224, 224), np.int64),
 ])
 def test_convert_image_dtype(shape, dtype):
-    data = np.random.rand(*shape).astype(dtype) # problem if using create_data(shape, dtype)
+    data = np.random.rand(*shape).astype(dtype) # problem if using f.create_data(shape, dtype)
     ov_preprocess = Compose([
         ConvertImageDtype(torch.float16),
         ConvertImageDtype(torch.float32),

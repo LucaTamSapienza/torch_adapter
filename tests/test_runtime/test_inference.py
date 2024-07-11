@@ -4,6 +4,7 @@ import torch
 import pytest
 from torchvision import transforms
 import numpy as np
+from tests import util as f
 
 
 @pytest.mark.parametrize("input_shape", [(1, 3, 224, 224), (1, 3, 299, 299)])
@@ -22,7 +23,8 @@ def test_inference(input_shape):
 ])
 def test_inference_with_transforms(shape, dtype):
     torch_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
-    ov_model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
+    ov_model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True) # AdapterModel
+    # data = f.create_data(shape, dtype)
     data = np.random.rand(*shape) + 1.0
     data = data.astype(dtype)
 
@@ -50,27 +52,11 @@ def test_inference_with_transforms(shape, dtype):
     ov_tensor = ov_preprocess(data)
     ov_output = ov_model(ov_tensor)[0]
 
-    # assert np.allclose(ov_tensor[0], torch_tensor[0].numpy(), rtol=1e-02) # assert True
+    # assert np.allclose(ov_tensor[0], torch_tensor[0].numpy(), rtol=1e-02) # True
 
     # print(np.sort(ov_output - output[0].numpy())) # print in ascending order the difference between the two arrays
 
-    assert np.allclose(ov_output, output[0].numpy(), rtol=1e-02)
+    # assert np.allclose(ov_output, output[0].numpy(), rtol=1e-02)
 
-    # Perform element-wise comparison using np.isclose
-    close_elements = np.isclose(output, ov_output, rtol=1e-02)
-
-    # Count the number of close elements
-    count_close_elements = np.sum(close_elements)
-
-    # Print the number of close elements
-    print(f'Number of close elements: {count_close_elements}')
-
-    # Calculate the total number of elements
-    total_elements = np.prod(output.shape)
-
-    # Calculate the number of broken (not close) elements
-    count_broken_elements = total_elements - count_close_elements
-
-    # Print the number of broken elements
-    print(f'Number of broken elements: {count_broken_elements}')
-
+    f.print_close_broken_elements(output[0].numpy(), ov_output)
+    

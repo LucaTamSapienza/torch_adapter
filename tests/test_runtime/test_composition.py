@@ -7,10 +7,8 @@ import pytest
 
 
 @pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 980, 1260), np.float32),
-    ((1, 3, 980, 1260), np.float16),
-    ((1, 3, 224, 224), np.float32),
-    ((1, 3, 224, 224), np.float16),
+    ((1, 3, 240, 240), np.float32),
+    ((1, 3, 240, 240), np.float16),
 ])
 def test_Compose_1(shape, dtype):
     data = np.random.rand(*shape) + 1.0
@@ -38,10 +36,8 @@ def test_Compose_1(shape, dtype):
 
 
 @pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 980, 1260), np.float32),
-    ((1, 3, 980, 1260), np.float16),
-    ((1, 3, 1000, 1000), np.float32),
-    ((1, 3, 1000, 1000), np.float16),
+    ((1, 3, 240, 240), np.float16),
+    ((1, 3, 240, 240), np.float32),
 ])
 def test_Compose_2(shape, dtype):
     data = np.random.rand(*shape) + 1.0

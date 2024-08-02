@@ -1,13 +1,16 @@
-from . import util as f
-from openvino.preprocess import PrePostProcessor, ResizeAlgorithm, ColorFormat
-from openvino.runtime import Layout, Type
-import openvino.runtime.opset14 as ops
+from typing import Dict, List, Tuple, Union, Callable, Sequence
+
 import numpy as np
-from typing import Tuple, List, Callable, Dict
 import openvino as ov
-from openvino.runtime.utils.decorators import custom_preprocess_function
+import openvino.runtime.opset14 as ops
 import torch
+from openvino.preprocess import ColorFormat, PrePostProcessor, ResizeAlgorithm
+from openvino.runtime import Layout, Type
+from openvino.runtime.utils.decorators import custom_preprocess_function
 from torchvision.transforms import InterpolationMode
+
+from . import util as f
+
 
 TORCHTYPE_TO_OVTYPE = {
     float: ov.Type.f32,
@@ -31,9 +34,10 @@ TORCHTYPE_TO_OVTYPE = {
 
 # Base class for all transformations
 class Transform:
+    def __init__(self) -> None:
+        pass
     def __call__(self, ppp):
-        raise NotImplementedError("Transformations must implement the __call__ method.")
-
+        pass
 
 # Scale transformation
 #TODO: to be tested
@@ -48,7 +52,24 @@ class Scale(Transform):
 
 # Resize transformation
 class Resize(Transform):
-    def __init__(self, size: Tuple[int, int], interpolation=InterpolationMode.BILINEAR, max_size = 0):
+    """Resize the input image to the given size.
+
+    Args:
+        size (Tuple or int): Desired output size. If size is a Tuple like
+            (h, w), output size will be matched to this. If size is an int,
+            smaller edge of the image will be matched to this number.
+            i.e, if height > width, then image will be rescaled to
+            (size * height / width, size).
+
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+        max_size (int, optional): Not Supported
+
+    """
+    def __init__(self, size: Union[int, Tuple[int, int]], interpolation=InterpolationMode.BILINEAR, max_size = 0):
         self.size = size
         self.interpolation = interpolation
         self.max_size = max_size
@@ -64,14 +85,16 @@ class Resize(Transform):
         if self.interpolation not in resize_mode_map.keys():
             raise ValueError(f"Interpolation mode {self.interpolation} is not supported.")
 
-        target_h, target_w = self.size
+        target_h, target_w = f._setup_size(self.size, "Incorrect size type for Resize operation")
 
         # rescale the smaller image edge
         current_h, current_w = meta["input_shape"][2:4] if meta["layout"] == Layout("NCHW") else meta["input_shape"][1:3]
-        if current_h > current_w:
-            target_h = int(target_w * (current_h / current_h))
-        elif current_w > current_h:
-            target_w = int(target_h * (current_w / current_w))
+
+        if isinstance(self.size, int): # is this check needed?
+            if current_h > current_w:
+                target_h = int(self.size * (current_h / current_w))
+            elif current_w > current_h:
+                target_w = int(self.size * (current_w / current_h))
 
         ppp.input().tensor().set_layout(Layout("NCHW"))
 
@@ -87,13 +110,21 @@ class Resize(Transform):
 
 # CenterCrop transformation
 class CenterCrop(Transform):
-    def __init__(self, size: Tuple[int, int]):
+    """Crops the given image at the center.
+    If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
+
+    Args:
+        size (Tuple or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+    """
+    def __init__(self, size: Union[int, Tuple[int, int]]):
         self.size = size
 
     def __call__(self, ppp: PrePostProcessor, meta: Dict) -> List:
         input_shape = meta["input_shape"]
         source_size = input_shape[2:]
-        target_size = self.size
+        target_size = f._setup_size(self.size, "Incorrect size type for CenterCrop operation")
 
         if target_size[0] > source_size[0] or target_size[1] > source_size[1]:
             raise ValueError("Requested crop size is larger than the input size")
@@ -120,7 +151,7 @@ class Normalize(Transform):
     This transformation does not support PIL Image.
 
     Args:
-        tensor (Tensor): Float tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        tensor (Tensor): Float tensor image of size (C, H, W) or (N, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         (TBA: inplace(bool,optional): Bool to make this operation inplace.)
@@ -154,7 +185,6 @@ class ConvertColor(Transform):
 class ToTensor(Transform):
     """
     convert numpy.ndarray -> Tensor
-    TBA support PIL Image
     """
     def __init__(self):
         pass
@@ -176,17 +206,17 @@ class ToTensor(Transform):
 
 # ConvertImageDtype transformation
 class ConvertImageDtype(Transform):
-    """
-    Convert a tensor image to the given `dtype` and scale the values accordingly
-    This function does not support PIL Image.
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly.
 
     Args:
-        image (Tensor): Image to be converted
-        dtype (dtype): Desired data type of the output
+        dtype (torch.dtype): Desired data type of the output
+        .. note::
+            torch.dtype are mapped to the corresponding ``dtype`` of openvino
 
-    Returns:
-        Tensor: Converted image
+    .. note::
 
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
     """
     def __init__(self, dtype):
         self.dtype = dtype
@@ -198,7 +228,34 @@ class ConvertImageDtype(Transform):
 
 # Pad transformation
 class Pad(Transform):
-    def __init__(self, padding, fill=0, padding_mode = "constant"):
+    """Pad the given image on all sides with the given "pad" value.
+
+        Args:
+            padding (int or sequence): Padding on each border. If a single int is provided this
+                is used to pad all borders. If sequence of length 2 is provided this is the padding
+                on left/right and top/bottom respectively. If a sequence of length 4 is provided
+                this is the padding for the left, top, right and bottom borders respectively.
+
+            fill (number): Pixel fill value for constant fill. Default is 0.
+
+            padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+                Default is constant.
+
+                - constant: pads with a constant value, this value is specified with fill
+
+                - edge: pads with the last value at the edge of the image.
+                If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
+
+                - reflect: pads with reflection of image without repeating the last value on the edge.
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                will result in [3, 2, 1, 2, 3, 4, 3, 2]
+
+                - symmetric: pads with reflection of image repeating the last value on the edge.
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                will result in [2, 1, 1, 2, 3, 4, 4, 3]
+    """
+
+    def __init__(self, padding: Sequence, fill=0, padding_mode = "constant"):
         self.padding = padding
         self.fill = fill
         self.padding_mode = padding_mode

@@ -21,6 +21,10 @@ class Composition:
         return False
 
     def _compile_model(self, transforms):
+        """if isinstance(self._last_data, Image.Image):
+            image_array = np.array(input_image) 
+            image_array_with_batch = np.expand_dims(image_array, axis=0)
+        """
         model = create_empty_model([self._last_data.shape], [self._last_data.dtype])
         ppp = PrePostProcessor(model)
 
@@ -37,10 +41,28 @@ class Composition:
         # Build the preprocessing pipeline
         final_model = ppp.build()
         self._compiled_model = ov.Core().compile_model(final_model, "CPU")
+        # ov.serialize(final_model, "temp.xml") # save the model (to open it with netron for example)
 
 
 # Compose class is used to apply a list of transforms sequentially
 class Compose(Composition):
+    """Composes several transforms together.
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> transforms.Compose([
+        >>>     transforms.Resize((256, 256)),
+        >>>     transforms.CenterCrop((224, 224)),
+        >>>     transforms.pad((1, 1)),
+        >>> ])
+
+    Note::
+        The Compose Class create an empty model (with desired shape and data types) 
+        and stack all the transformation on top of it.
+
+    """
     def __init__(self, transforms):
         super().__init__()
         self.transforms = transforms
@@ -55,6 +77,21 @@ class Compose(Composition):
 
 # RandomApply class is used to apply a list of transforms randomly with a given probability p (0.5 by default)
 class RandomApply(Composition):
+    """Apply a list of transformations randomly with a given probability p.
+    
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+        p (float): probability that the transformation is applied.
+        
+    Example:
+        >>> transforms.RandomApply([
+        >>>     transforms.Resize((256, 256)),
+        >>>     transforms.CenterCrop((224, 224)),
+        >>>     transforms.pad((1, 1)),
+        >>> ], p=0.5)
+    
+    In this example, each of the transformations is applied with a probability of 0.5.
+    """
     def __init__(self, transforms, p=0.5):
         super().__init__()
         self.transforms = transforms
@@ -87,6 +124,10 @@ class RandomApply(Composition):
 
 # RandomOrder class is used to apply a list of transforms in a random order
 class RandomOrder(Composition):
+    """
+    .. note::
+        TBA: description
+    """
     def __init__(self, transforms):
         super().__init__()
         self.transforms = transforms

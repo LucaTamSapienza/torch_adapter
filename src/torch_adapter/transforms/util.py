@@ -4,6 +4,11 @@ from openvino.runtime import Tensor
 from openvino.runtime.utils.decorators import custom_preprocess_function
 from typing import List
 import copy
+from typing import Sequence as SequenceType
+from collections.abc import Sequence
+import numbers
+from typing import Any
+from functools import singledispatch
 
 
 def create_empty_model(shapes, dtype):
@@ -44,3 +49,21 @@ def _NHWC_to_NCHW(input_shape: List) -> List:
     new_shape[2] = input_shape[1]
     new_shape[3] = input_shape[2]
     return new_shape
+
+@singledispatch
+def _setup_size(size: Any, error_msg: str) -> SequenceType[int]:
+    raise ValueError(error_msg)
+
+
+@_setup_size.register
+def _setup_size_number(size: numbers.Number, error_msg: str) -> SequenceType[int]:
+    return int(size), int(size)  # type: ignore
+
+
+@_setup_size.register
+def _setup_size_sequence(size: Sequence, error_msg: str) -> SequenceType[int]:
+    if len(size) == 1:
+        return size[0], size[0]
+    elif len(size) == 2:
+        return size[0], size[1]
+    raise ValueError(error_msg)

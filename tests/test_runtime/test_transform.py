@@ -5,7 +5,29 @@ from torchvision import transforms
 import torch
 from src.torch_adapter.transforms import *
 from tests import util as f
+from PIL import Image
+import urllib
 
+"""
+# Download an example image from the pytorch website
+url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
+try:
+    urllib.URLopener().retrieve(url, filename)
+except:
+    urllib.request.urlretrieve(url, filename)
+
+# Open the image
+input_image = Image.open(filename)
+print(isinstance(input_image, Image.Image)) # test if input_image is a PIL Image
+image_array = np.array(input_image) 
+print("image_array = ", image_array.shape)
+"""
+"""# Add the batch dimension
+image_array_with_batch = np.expand_dims(image_array, axis=0)
+
+# Inspect the new shape
+print(image_array_with_batch.shape)
+"""
 
 @pytest.mark.parametrize("shape, dtype", [
     ((1, 3, 960, 1280), np.int32),
@@ -26,45 +48,46 @@ def test_abs(shape, dtype):
 
 
 #TODO: Solve problem when type is int / uint
-@pytest.mark.parametrize("shape, dtype, interpolation", [
-    param((1, 3, 224, 224), np.float32, transforms.InterpolationMode.BILINEAR),
-    param((1, 3, 200, 240), np.float32, transforms.InterpolationMode.BILINEAR),
-    param((1, 3, 224, 224), np.float32, transforms.InterpolationMode.NEAREST, marks=pytest.mark.xfail(reason="Interpolation not BILINEAR")), # Not Working (?)
-    param((1, 3, 200, 240), np.float32, transforms.InterpolationMode.BICUBIC, marks=pytest.mark.xfail(reason="Interpolation not BILINEAR")), # sometimes work, sometimes not
+@pytest.mark.parametrize("shape, dtype, size, interpolation", [
+    param((1, 3, 224, 224), np.float32, (256, 256), transforms.InterpolationMode.BILINEAR),
+    param((1, 3, 200, 240), np.float32, (256, 256), transforms.InterpolationMode.BILINEAR),
+    param((1, 3, 240, 200), np.float32, 256, transforms.InterpolationMode.BILINEAR),
+    param((1, 3, 224, 224), np.float32, (256, 256), transforms.InterpolationMode.NEAREST, marks=pytest.mark.xfail(reason="Interpolation not BILINEAR")), # Not Working (?)
+    param((1, 3, 200, 240), np.float32, (256, 256), transforms.InterpolationMode.BICUBIC, marks=pytest.mark.xfail(reason="Interpolation not BILINEAR")), # sometimes work, sometimes not
 ], ids=lambda interpolation: f"interpolation={interpolation}")
 
-def test_resize(shape, dtype, interpolation):
+def test_resize(shape, dtype, size, interpolation):
     data = f.create_data(shape, dtype)
     ov_preprocess = Compose([
-        Resize((256, 256), interpolation),
+        Resize(size, interpolation),
     ])
     ov_tensor = ov_preprocess(data)[0]
     # print("ov_tensor = ", ov_tensor)
     torch_preprocess = transforms.Compose([
-        transforms.Resize((256, 256), interpolation),
+        transforms.Resize(size, interpolation),
     ])
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
-    f.print_close_broken_elements(torch_result, ov_tensor)
+    # f.print_close_broken_elements(torch_result, ov_tensor)
 
     # print("torch_result = ", torch_result)
     assert np.allclose(torch_result, ov_tensor, rtol=1e-02)
 
 
-@pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 224, 224), np.float32),
-    ((1, 3, 224, 224), np.float64),
-    ((1, 3, 224, 224), np.int32),
-    ((1, 3, 224, 224), np.int64),
+@pytest.mark.parametrize("shape, dtype, crop", [
+    param((1, 3, 256, 256), np.float32, (224, 224)), # what if shape is (3, 224, 224) and crop is (224, 224) ?
+    param((1, 3, 256, 256), np.float64, 224),
+    param((1, 3, 224, 224), np.int32, (112, 40)),
+    param((1, 3, 224, 224), np.int64, (112, 200)),
 ])
-def test_centerCrop(shape, dtype):
+def test_centerCrop(shape, dtype, crop):
     data = f.create_data(shape, dtype)
     preprocess = Compose([
-        CenterCrop((112, 112)),
+        CenterCrop(crop),
     ])
     ov_result = preprocess(data)[0]
     torch_preprocess = transforms.Compose([
-        transforms.CenterCrop((112, 112)),
+        transforms.CenterCrop(crop),
     ])
     # Convert data to a PyTorch tensor before applying torch_preprocess
     torch_data = torch.tensor(data, dtype = torch.float32) # needs to be dynamic based on the dtype parameter
@@ -137,7 +160,7 @@ def test_normalize(shape, dtype):
     ])
     torch_tensor = torch_preprocess(torch.tensor(data))[0].numpy()
     # print("torch_tensor = ", torch_tensor)
-    f.print_close_broken_elements(torch_tensor, ov_tensor)
+    # f.print_close_broken_elements(torch_tensor, ov_tensor)
     assert np.allclose(ov_tensor, torch_tensor, rtol=1e-03)
 
 

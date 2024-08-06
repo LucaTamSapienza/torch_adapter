@@ -8,7 +8,7 @@ from tests import util as f
 from PIL import Image
 import urllib
 
-"""
+
 # Download an example image from the pytorch website
 url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
 try:
@@ -18,23 +18,39 @@ except:
 
 # Open the image
 input_image = Image.open(filename)
-print(isinstance(input_image, Image.Image)) # test if input_image is a PIL Image
+def test_normalize_pil():
+    ov_preprocess = Compose([
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    ov_tensor = ov_preprocess(input_image)[0]
+    torch_preprocess = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    torch_tensor = torch_preprocess(input_image)[0].numpy()
+    # print("torch_tensor = ", torch_tensor)
+    # f.print_close_broken_elements(torch_tensor, ov_tensor)
+    assert np.allclose(ov_tensor, torch_tensor, rtol=1e-03)
+
+
+
+"""print(isinstance(input_image, Image.Image)) # test if input_image is a PIL Image
 image_array = np.array(input_image) 
 print("image_array = ", image_array.shape)
-"""
-"""# Add the batch dimension
+
+# Add the batch dimension
 image_array_with_batch = np.expand_dims(image_array, axis=0)
 
 # Inspect the new shape
-print(image_array_with_batch.shape)
-"""
+print(image_array_with_batch.shape)"""
+
 
 @pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 960, 1280), np.int32),
-    ((1, 3, 960, 1280), np.int64),
-    ((1, 3, 1000, 1000), np.float16),
-    ((1, 3, 224, 224), np.float32),
-    ((1, 3, 256, 256), np.float64),
+    param((1, 3, 960, 1280), np.int32),
+    param((1, 3, 960, 1280), np.int64),
+    param((1, 3, 1000, 1000), np.float16),
+    param((1, 3, 224, 224), np.float32),
+    param((1, 3, 256, 256), np.float64),
 ])
 def test_abs(shape, dtype):
     data = f.create_data(shape, dtype)
@@ -98,8 +114,8 @@ def test_centerCrop(shape, dtype, crop):
 
 
 @pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 224, 224), np.int64),
-    ((1, 3, 224, 224), np.int32),
+    param((1, 3, 224, 224), np.int64),
+    param((1, 3, 224, 224), np.int32),
 ])
 @pytest.mark.skip(reason="Need to be fixed and to be implemented support for PIL Image")
 def test_to_tensor(shape, dtype):
@@ -121,14 +137,14 @@ def test_to_tensor(shape, dtype):
 
 
 @pytest.mark.parametrize("test_input, pad, fill, padding_mode", [
-    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (1, 1), 0, "constant"),
-    (np.random.randint(255, size = (1, 3, 220, 224), dtype = np.uint8), (2), 0, "constant"),
-    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3), 0, "constant"),
-    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 0, "constant"),
-    (np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 3, "constant"),
-    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "edge"),
-    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "reflect"),
-    (np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "symmetric"),
+    param(np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (1, 1), 0, "constant"),
+    param(np.random.randint(255, size = (1, 3, 220, 224), dtype = np.uint8), (2), 0, "constant"),
+    param(np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3), 0, "constant"),
+    param(np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 0, "constant"),
+    param(np.random.randint(255, size = (1, 3, 960, 1280), dtype = np.uint8), (2, 3, 4, 5), 3, "constant"),
+    param(np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "edge"),
+    param(np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "reflect"),
+    param(np.random.randint(255, size = (1, 3, 218, 220), dtype = np.uint8), (2, 3), 0, "symmetric"),
 ])
 def test_pad(test_input, pad, fill, padding_mode):
     ov_preprocess = Compose([
@@ -145,8 +161,8 @@ def test_pad(test_input, pad, fill, padding_mode):
 
 
 @pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 224, 224), np.float32),
-    ((1, 3, 1000, 1000), np.float64),
+    param((1, 3, 224, 224), np.float32),
+    param((1, 3, 1000, 1000), np.float64),
 ])
 def test_normalize(shape, dtype):
     data = f.create_data(shape, dtype)
@@ -165,11 +181,11 @@ def test_normalize(shape, dtype):
 
 
 @pytest.mark.parametrize("shape, dtype, rtol", [
-    ((1, 3, 224, 224), np.float16, 1e-05),
-    ((1, 3, 224, 224), np.float32, 2e-03),
-    ((1, 3, 224, 224), np.uint8, 1e-05),
-    ((1, 3, 224, 224), np.int32, 1e-05),
-    ((1, 3, 224, 224), np.int64, 1e-05),
+    param((1, 3, 224, 224), np.float16, 1e-05),
+    param((1, 3, 224, 224), np.float32, 2e-03),
+    param((1, 3, 224, 224), np.uint8, 1e-05),
+    param((1, 3, 224, 224), np.int32, 1e-05),
+    param((1, 3, 224, 224), np.int64, 1e-05),
 ])
 def test_convert_image_dtype(shape, dtype, rtol):
     data = np.random.rand(*shape).astype(dtype) # problem if using f.create_data(shape, dtype)

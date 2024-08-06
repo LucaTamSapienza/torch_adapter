@@ -44,6 +44,7 @@ def custom_preprocess_abs(output: ov.runtime.Output):
 
 
 def _NHWC_to_NCHW(input_shape: List) -> List:
+    print(input_shape)
     new_shape = copy.deepcopy(input_shape)
     new_shape[1] = input_shape[3]
     new_shape[2] = input_shape[1]

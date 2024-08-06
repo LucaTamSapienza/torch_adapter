@@ -2,7 +2,8 @@ import numpy as np
 from openvino.preprocess import PrePostProcessor
 import openvino as ov
 from openvino.runtime import Layout
-from .util import create_empty_model
+from .util import create_empty_model, _NHWC_to_NCHW
+from PIL import Image
 
 
 # Base class for all Composition classes
@@ -21,10 +22,14 @@ class Composition:
         return False
 
     def _compile_model(self, transforms):
-        """if isinstance(self._last_data, Image.Image):
-            image_array = np.array(input_image) 
-            image_array_with_batch = np.expand_dims(image_array, axis=0)
-        """
+        if isinstance(self._last_data, Image.Image):
+            self._last_data = np.array(self._last_data, dtype=np.float32)
+            self._last_data = np.expand_dims(self._last_data, axis=0)
+            self._last_data.dtype = np.float32
+            #self._last_data.shape = _NHWC_to_NCHW(list(self._last_data.shape))
+            self._last_data.shape = _NHWC_to_NCHW(list(self._last_data.shape))
+            # print(self._last_data.shape)
+        
         model = create_empty_model([self._last_data.shape], [self._last_data.dtype])
         ppp = PrePostProcessor(model)
 
@@ -97,7 +102,7 @@ class RandomApply(Composition):
         self.transforms = transforms
         self.p = p
     
-    # override the _compile_model inherited from Composition because the implementation is different
+    # override the _compile_model inherited from Composition
     def _compile_model(self, transforms):
         model = create_empty_model([self._last_data.shape], [self._last_data.dtype])
         ppp = PrePostProcessor(model)

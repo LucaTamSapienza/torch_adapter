@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 import pytest
+import urllib
 
 
 @pytest.mark.parametrize("shape, dtype", [
@@ -117,3 +118,44 @@ def test_RandomOrder(shape, dtype):
     torch_result = torch_preprocess(torch.tensor(data))[0].numpy()
 
     assert np.allclose(ov_result, torch_result, rtol=1e-03)
+
+
+"""########################## test PIL images ##########################"""
+
+
+image_urls = [
+    ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg"),
+    # ("https://github.com/pytorch/hub/raw/master/images/deeplab1.png", "deeplab1.png"),
+]
+
+def download_image(url, filename):
+    try:
+        urllib.URLopener().retrieve(url, filename)
+    except:
+        urllib.request.urlretrieve(url, filename)
+    return Image.open(filename)
+
+input_images = [download_image(url, filename) for url, filename in image_urls]
+
+@pytest.mark.parametrize("input_image", input_images)
+def test_compose_pil(input_image):
+    ov_preprocess = Compose([
+        Resize(256),
+        CenterCrop(224),
+        ToTensor(),
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    torch_preprocess = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.CenterCrop((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    ov_result = ov_preprocess(input_image)[0]
+    print("ov ", ov_result)
+    torch_result = torch_preprocess(input_image)[0].numpy()
+    print("torch ", torch_result)
+
+    assert np.allclose(ov_result, torch_result, rtol=1e-02)

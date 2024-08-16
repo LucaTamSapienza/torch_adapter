@@ -7,7 +7,7 @@ import copy
 from typing import Sequence as SequenceType
 from collections.abc import Sequence
 import numbers
-from typing import Any
+from typing import Any, Tuple
 from functools import singledispatch
 
 
@@ -43,13 +43,8 @@ def custom_preprocess_abs(output: ov.runtime.Output):
     return ops.abs(output)
 
 
-def _NHWC_to_NCHW(input_shape: List) -> List:
-    print(input_shape)
-    new_shape = copy.deepcopy(input_shape)
-    new_shape[1] = input_shape[3]
-    new_shape[2] = input_shape[1]
-    new_shape[3] = input_shape[2]
-    return new_shape
+def _NHWC_to_NCHW(shape) -> Tuple:
+    return (shape[0], shape[3], shape[1], shape[2])
 
 @singledispatch
 def _setup_size(size: Any, error_msg: str) -> SequenceType[int]:

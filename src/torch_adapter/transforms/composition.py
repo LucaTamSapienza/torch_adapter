@@ -26,7 +26,6 @@ class Composition:
             self._last_data = np.array(self._last_data, dtype=np.float32)
             self._last_data = np.expand_dims(self._last_data, axis=0)
             self._last_data.dtype = np.float32
-            #self._last_data.shape = _NHWC_to_NCHW(list(self._last_data.shape))
             self._last_data.shape = _NHWC_to_NCHW(list(self._last_data.shape))
             # print(self._last_data.shape)
         
@@ -58,8 +57,8 @@ class Compose(Composition):
 
     Example:
         >>> transforms.Compose([
-        >>>     transforms.Resize((256, 256)),
-        >>>     transforms.CenterCrop((224, 224)),
+        >>>     transforms.Resize(256),
+        >>>     transforms.CenterCrop(224),
         >>>     transforms.pad((1, 1)),
         >>> ])
 
@@ -77,7 +76,7 @@ class Compose(Composition):
             #print("Recompiling...")
             self._compile_model(self.transforms)
 
-        return self._compiled_model(data, share_inputs=True, share_outputs=True)
+        return self._compiled_model(self._last_data, share_inputs=True, share_outputs=True)
 
 
 # RandomApply class is used to apply a list of transforms randomly with a given probability p (0.5 by default)
@@ -90,7 +89,7 @@ class RandomApply(Composition):
         
     Example:
         >>> transforms.RandomApply([
-        >>>     transforms.Resize((256, 256)),
+        >>>     transforms.Resize((256, 270)),
         >>>     transforms.CenterCrop((224, 224)),
         >>>     transforms.pad((1, 1)),
         >>> ], p=0.5)

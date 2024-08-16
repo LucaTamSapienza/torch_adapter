@@ -36,18 +36,8 @@ TORCHTYPE_TO_OVTYPE = {
 class Transform:
     def __init__(self) -> None:
         pass
-    def __call__(self, ppp):
+    def __call__(self, ppp: PrePostProcessor) -> List:
         pass
-
-# Scale transformation
-#TODO: to be tested
-class Scale(Transform):
-    def __init__(self, factor):
-        self.factor = factor
-
-    def __call__(self, ppp: PrePostProcessor, meta: Dict) -> List:
-        ppp.input().preprocess().scale(self.factor)
-        return [meta["input_shape"], meta["layout"]]
 
 
 # Resize transformation
@@ -66,6 +56,7 @@ class Resize(Transform):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
+
         max_size (int, optional): Not Supported
 
     """
@@ -168,40 +159,26 @@ class Normalize(Transform):
         return [meta["input_shape"], meta["layout"]]
 
 
-
-# Color conversion transformation
-#TODO: to be tested -> how(?)
-class ConvertColor(Transform):
-    def __init__(self, color_format):
-        self.color_format = color_format
-
-    def __call__(self, ppp: PrePostProcessor, meta: Dict) -> List:
-        ppp.input().preprocess().convert_color(self.color_format)
-        return [meta["input_shape"], meta["layout"]]
-
-
 # ToTensor transformation
-# need to implement support for Pil image
 class ToTensor(Transform):
-    """
-    convert numpy.ndarray -> Tensor
+    """Used for PIL Image only. Scale the value of the Image to [0 ,1]
+
+    Args:
+        None
+    
+    Returns:
+        Tensor: Scaled tensor image.
     """
     def __init__(self):
         pass
     def __call__(self, ppp: PrePostProcessor, meta: Dict) -> List:
-        input_shape = meta["input_shape"]
-        layout = meta["layout"]
 
-        ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC")).set_color_format(ColorFormat.RGB)
+        # ppp.input().tensor().set_element_type(Type.u8).set_layout(Layout("NHWC")).set_color_format(ColorFormat.RGB)
 
-        if layout == Layout("NHWC"):
-            input_shape = f._NHWC_to_NCHW(input_shape)
-            layout = Layout("NCHW")
-            ppp.input().preprocess().convert_layout(layout)
         ppp.input().preprocess().convert_element_type(Type.f32)
         ppp.input().preprocess().scale(255.0)
         
-        return [input_shape, layout]
+        return [meta["input_shape"], meta["layout"]]
 
 
 # ConvertImageDtype transformation

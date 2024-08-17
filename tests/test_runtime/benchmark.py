@@ -9,16 +9,11 @@ import timeit
 
 clock = 200
 
-@pytest.mark.parametrize("shape, dtype", [
-    ((1, 3, 224, 224), np.float32),
-    ((1, 3, 224, 224), np.float16),
-])
-def test_inference_with_transforms(shape, dtype):
+def benchmark_inference():
     torch_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
     ov_model = torch_adapter.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
     
-    data = np.random.rand(*shape) + 1.0
-    data = data.astype(dtype)
+    data = np.ones((8, 3, 1000, 1000), dtype=np.float32)
 
     torch_model.eval()
     torch_preprocess = transforms.Compose([
@@ -52,3 +47,41 @@ def test_inference_with_transforms(shape, dtype):
 
     ov_time = timeit.timeit(ov_inference, number=clock)
     print(f"OpenVINO Inference Time: {ov_time / clock:.6f} seconds per inference")
+
+benchmark_inference()
+
+def ipython():
+    data = np.ones((8, 3, 1000, 1000), dtype=np.float32)
+    
+
+    def get_torch_Compose():
+        return transforms.Compose([
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+    
+
+    def torch_Compose(data):
+        torch_preprocess = get_torch_Compose()
+    
+        for i in range(10):
+            torch_result = torch_preprocess(torch.from_numpy(data))[0].numpy()
+    
+        return torch_result
+    
+
+    def get_ov_Compose():
+        return Compose([
+                    Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+    
+    # @profile
+    def ov_Compose(data):
+        my_preprocess = get_ov_Compose()  # That itself was a reason that recompilation always occurred
+    
+        for i in range(10):  # if you run a loop that shows the hits to recompile were present
+            my_result = my_preprocess(data)[0]
+    
+        return my_result
+    
+    torch_preprocess = get_torch_Compose()
+    my_preprocess = get_ov_Compose()

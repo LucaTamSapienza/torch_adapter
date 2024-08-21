@@ -54,8 +54,8 @@ def test_inference_with_transforms(shape, dtype):
 
     # assert np.allclose(ov_tensor[0], torch_tensor[0].numpy(), rtol=1e-02) # True
 
-    print(np.sort(ov_output - output[0].numpy())) # print in ascending order the difference between the two arrays
+    # print(np.sort(ov_output - output[0].numpy())) # print in ascending order the difference between the two arrays
 
-    #assert np.allclose(ov_output, output[0].numpy(), rtol=1e-02)
+    assert np.argmax(ov_output) == np.argmax(output[0].numpy())
 
-    f.print_close_broken_elements(output[0].numpy(), ov_output)
+    # f.print_close_broken_elements(output[0].numpy(), ov_output)

@@ -7,7 +7,7 @@ import src.torch_adapter as torch_adapter
 from src.torch_adapter.transforms import Compose, Resize, CenterCrop, Normalize
 import timeit
 
-clock = 1
+clock = 100
 
 def benchmark_inference():
     torch_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)

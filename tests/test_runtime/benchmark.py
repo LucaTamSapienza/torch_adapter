@@ -7,7 +7,7 @@ import src.torch_adapter as torch_adapter
 from src.torch_adapter.transforms import Compose, Resize, CenterCrop, Normalize
 import timeit
 
-clock = 200
+clock = 1
 
 def benchmark_inference():
     torch_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
@@ -64,19 +64,19 @@ import timeit
 import urllib
 from PIL import Image
 
-data = np.ones((8, 3, 1000, 1000), dtype=np.float32)
+data = np.ones((1, 3, 1000, 1000), dtype=np.float32)
 
-url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
-try: urllib.URLopener().retrieve(url, filename)
-except: urllib.request.urlretrieve(url, filename)
-data = Image.open(filename)
+# url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
+# try: urllib.URLopener().retrieve(url, filename)
+# except: urllib.request.urlretrieve(url, filename)
+# data = Image.open(filename)
 
 def get_torch_Compose():
     return transforms.Compose([
                 #transforms.Resize(256),
                 #transforms.CenterCrop(224),
                 #transforms.Pad((1, 1)),
-                transforms.ToTensor(),
+                # transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                 #transforms.ConvertImageDtype(torch.float16),
                 #transforms.ConvertImageDtype(torch.float32),
@@ -96,7 +96,7 @@ def get_ov_Compose():
                 #Resize(256),
                 #CenterCrop(224),
                 #Pad((1, 1)),
-                ToTensor(),
+                # ToTensor(),
                 Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                 #ConvertImageDtype(torch.float16),
                 #ConvertImageDtype(torch.float32),

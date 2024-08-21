@@ -26,5 +26,4 @@ export PYTHONPATH=$PYTHONPATH:path_to_torch_adapter
 > [!NOTE]
 > Please replace path_to_torch_adapter with the actual path to the torch_adapter directory on your system.
 
-Now you can check if everything works by running tests and so on.
-
+Now you can check if everything works by running `pytest tests/`

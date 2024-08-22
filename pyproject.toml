@@ -6,11 +6,11 @@ authors = [
     {name = "LucaTamSapienza", email = "tutordimatematica.ing@gmail.com"},
 ]
 dependencies = [
-    torch==2.3.0,
-    pytest,
-    numpy,
-    torchvision==0.18.0,
-    openvino>=2024.3.0
+    "torch==2.3.0",
+    "pytest",
+    "numpy",
+    "torchvision==0.18.0",
+    "openvino>=2024.3.0",
 ]
 requires-python = ">=3.9"
 readme = "README.md"

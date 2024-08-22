@@ -1,14 +1,24 @@
 [project]
 name = "torch_adapter"
 version = "0.1.0"
-description = "In progress"
+description = "This library provides an implementation of the preprocessing and inference steps offered by PyTorch, using the OpenVINO API, thereby serving as an adapter for PyTorch."
 authors = [
     {name = "LucaTamSapienza", email = "tutordimatematica.ing@gmail.com"},
 ]
 dependencies = []
 requires-python = ">=3.9"
 readme = "README.md"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
+keywords = ["Python", "PyTorch", "openvino"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.9",
+]
+
+[project.urls]
+Repository = "https://github.com/LucaTamSapienza/torch_adapter"
+Issues = "https://github.com/LucaTamSapienza/torch_adapter/issues"
 
 [build-system]
 requires = ["pdm-backend"]

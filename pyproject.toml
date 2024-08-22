@@ -33,3 +33,4 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+packages = ["src"]

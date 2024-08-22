@@ -64,7 +64,7 @@ import timeit
 import urllib
 from PIL import Image
 
-data = np.ones((1, 3, 1000, 1000), dtype=np.float32)
+data = np.ones((8, 3, 1000, 1000), dtype=np.float32)
 
 # url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
 # try: urllib.URLopener().retrieve(url, filename)

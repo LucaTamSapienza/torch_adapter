@@ -7,10 +7,9 @@ authors = [
 ]
 dependencies = [
     "torch==2.3.0",
-    "pytest",
     "numpy",
     "torchvision==0.18.0",
-    "openvino>=2024.3.0",
+    "openvino",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -30,7 +29,12 @@ Issues = "https://github.com/LucaTamSapienza/torch_adapter/issues"
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-
 [tool.pdm]
 distribution = true
 packages = ["src/torch_adapter"]
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest",
+    "ipython",
+]

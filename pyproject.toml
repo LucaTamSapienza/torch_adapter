@@ -33,4 +33,4 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
-packages = ["src"]
+packages = ["src/torch_adapter"]

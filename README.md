@@ -3,7 +3,6 @@
 **Requirments:**
 - python >= 3.9
 - venv
-- openvino
 
 > [!IMPORTANT]
 > If you encounter any issues or believe some dependencies are missing, please don't hesitate to contact me. Also, ensure to double-check each command to confirm that everything is functioning as expected.

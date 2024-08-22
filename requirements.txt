@@ -2,4 +2,4 @@ torch==2.3.0
 pytest
 numpy
 torchvision==0.18.0
-ipython
+openvino>=2024.3.0

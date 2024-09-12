@@ -1,6 +1,6 @@
 # torch_adapter
 
-The purpose of this project is to provide an adapter for **PyTorch**, entirely using the **OpenVINO API**. For now, only the preprocessing and inference steps are available.
+The purpose of this project is to provide an adapter for **PyTorch**, entirely using the **OpenVINO API**. For now, only the *preprocessing* and *inference* steps are available.
 
 ## Requirments:
 - python >= 3.9
